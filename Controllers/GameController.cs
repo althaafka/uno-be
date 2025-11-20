@@ -21,5 +21,18 @@ namespace Uno.API.Controllers
             var response = await _gameService.StartGameAsync(request);
             return Ok(response);
         }
+
+        [HttpPost("{gameId}/play")]
+        public async Task<IActionResult> PlayCard([FromRoute] string gameId, [FromBody] PlayCardRequestDto request)
+        {
+            var response = await _gameService.PlayCardAsync(gameId, request);
+
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
     }
 }

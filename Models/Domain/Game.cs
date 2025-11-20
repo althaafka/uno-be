@@ -140,4 +140,26 @@ public class Game
         OnGameEvent?.Invoke($"{player.Name} drew a card");
         return card;
     }
+
+    public bool PlayCard(IPlayer player, string cardId)
+    {
+        int cardIdx = _hands[player].Cards.FindIndex(card => card.Id == cardId);
+        if (cardIdx == -1) return false;
+
+        ICard card = _hands[player].Cards[cardIdx];
+        if (!IsCardMatch(card)) return false;
+
+        _hands[player].Cards.RemoveAt(cardIdx);
+        _discardPile.Cards.Add(card);
+
+        OnGameEvent?.Invoke($"{player.Name} play a card");
+        return true;
+    }
+
+    public bool IsCardMatch(ICard card)
+    {
+        ICard? topCard = GetTopDiscardCard();
+        if(card.Color == topCard?.Color || card.Color == CardColor.Wild) return true;
+        return card.Value == topCard?.Value;
+    }
 }

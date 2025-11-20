@@ -38,6 +38,62 @@ namespace Uno.API.Services.Implementations
             };
         }
 
+        public async Task<PlayCardResponseDto> PlayCardAsync(string gameId, PlayCardRequestDto request)
+        {
+            var game = await _redisService.GetAsync<Game>($"game:{gameId}");
+
+            if (game == null)
+            {
+                return new PlayCardResponseDto
+                {
+                    Success = false,
+                    Message = "Game not found"
+                };
+            }
+
+            var player = game.GetPlayers().FirstOrDefault(p => p.Id == request.PlayerId);
+
+            if (player == null)
+            {
+                return new PlayCardResponseDto
+                {
+                    Success = false,
+                    Message = "Player not found"
+                };
+            }
+
+            if (game.GetCurrentPlayer().Id != request.PlayerId)
+            {
+                return new PlayCardResponseDto
+                {
+                    Success = false,
+                    Message = "Not your turn"
+                };
+            }
+
+            bool cardPlayed = game.PlayCard(player, request.CardId);
+
+            if (!cardPlayed)
+            {
+                return new PlayCardResponseDto
+                {
+                    Success = false,
+                    Message = "Invalid card play"
+                };
+            }
+
+            await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
+
+            var gameState = BuildGameState(game);
+
+            return new PlayCardResponseDto
+            {
+                Success = true,
+                Message = "Card played successfully",
+                GameState = gameState
+            };
+        }
+
         private ICollectionCard CreateStandardDeck()
         {
             var cards = new List<ICard>();
