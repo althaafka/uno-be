@@ -5,6 +5,6 @@ namespace Uno.API.Services.Interfaces
 {
     public interface IGameService
     {
-        Task<StartGameResponse> StartGameAsync(StartGameRequest request);
+        Task<StartGameResponseDto> StartGameAsync(StartGameRequestDto request);
     }
 }

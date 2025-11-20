@@ -16,7 +16,7 @@ namespace Uno.API.Controllers
         }
 
         [HttpPost("start")]
-        public async Task<IActionResult> StartGame([FromBody] StartGameRequest request)
+        public async Task<IActionResult> StartGame([FromBody] StartGameRequestDto request)
         {
             var response = await _gameService.StartGameAsync(request);
             return Ok(response);
