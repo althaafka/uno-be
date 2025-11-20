@@ -88,11 +88,10 @@ namespace Uno.API.Services.Implementations
         {
             var playerStates = new List<PlayerStateDto>();
             var players = game.GetPlayers();
-            Console.WriteLine( players[0].Id);
 
             foreach (var player in game.GetPlayers())
             {
-                Console.WriteLine(player.Name);
+
                 var playerState = new PlayerStateDto
                 {
                     Id = player.Id,
