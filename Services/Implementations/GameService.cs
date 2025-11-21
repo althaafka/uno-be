@@ -157,6 +157,7 @@ namespace Uno.API.Services.Implementations
                     Cards = player.IsHuman
                         ? game.GetPlayerHand(player).Select(c => new CardDto
                         {
+                            Id = c.Id,
                             Color = c.Color,
                             Value = c.Value
                         }).ToList()

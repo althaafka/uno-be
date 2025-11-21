@@ -6,6 +6,12 @@ public class Player : IPlayer
     public string Name { get; set; }
     public bool IsHuman { get; set; }
 
+    public Player()
+    {
+        Id = string.Empty;
+        Name = string.Empty;
+    }
+
     public Player(string id, string name, bool isHuman)
     {
         Id = id;

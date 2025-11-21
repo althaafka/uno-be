@@ -1,16 +1,12 @@
+using System.Text.Json.Serialization;
+
 namespace Uno.API.Models.Domain;
 
-public abstract class ICollectionCard
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+[JsonDerivedType(typeof(Deck), "Deck")]
+[JsonDerivedType(typeof(DiscardPile), "DiscardPile")]
+[JsonDerivedType(typeof(Hand), "Hand")]
+public interface ICollectionCard
 {
     public List<ICard> Cards { get; set; }
-
-    protected ICollectionCard()
-    {
-        Cards = new List<ICard>();
-    }
-
-    protected ICollectionCard(List<ICard> cards)
-    {
-        Cards = cards ?? new List<ICard>();
-    }
 }
