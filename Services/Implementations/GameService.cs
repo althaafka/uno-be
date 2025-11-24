@@ -245,8 +245,14 @@ namespace Uno.API.Services.Implementations
 
             if (cardToPlay != null)
             {
+                var cardDto = new CardDto
+                {
+                    Id = cardToPlay.Id,
+                    Color = cardToPlay.Color,
+                    Value = cardToPlay.Value
+                };
                 var cardIdx = game.PlayCard(bot, cardToPlay.Id);
-                return new GameEventDto(GameEventType.PlayCard, bot.Id, cardIdx);
+                return new GameEventDto(GameEventType.PlayCard, bot.Id, cardIdx, cardDto);
             }
 
             game.DrawCard(bot);
