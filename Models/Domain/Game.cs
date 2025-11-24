@@ -164,6 +164,8 @@ public class Game
         Hands[player.Id].Cards.RemoveAt(cardIdx);
         DiscardPile.Cards.Add(card);
 
+        CurrentColor = card.Color;
+
         OnGameEvent?.Invoke($"{player.Name} play a card");
         return cardIdx;
     }

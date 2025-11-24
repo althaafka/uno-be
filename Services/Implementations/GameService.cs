@@ -195,19 +195,19 @@ namespace Uno.API.Services.Implementations
                     cards.Add(new Card(color, (CardValue)i));
                 }
 
-                cards.Add(new Card(color, CardValue.Skip));
-                cards.Add(new Card(color, CardValue.Skip));
-                cards.Add(new Card(color, CardValue.Reverse));
-                cards.Add(new Card(color, CardValue.Reverse));
-                cards.Add(new Card(color, CardValue.DrawTwo));
-                cards.Add(new Card(color, CardValue.DrawTwo));
+                // cards.Add(new Card(color, CardValue.Skip));
+                // cards.Add(new Card(color, CardValue.Skip));
+                // cards.Add(new Card(color, CardValue.Reverse));
+                // cards.Add(new Card(color, CardValue.Reverse));
+                // cards.Add(new Card(color, CardValue.DrawTwo));
+                // cards.Add(new Card(color, CardValue.DrawTwo));
             }
 
-            for (int i = 0; i < 4; i++)
-            {
-                cards.Add(new Card(CardColor.Wild, CardValue.Wild));
-                cards.Add(new Card(CardColor.Wild, CardValue.WildDrawFour));
-            }
+            // for (int i = 0; i < 4; i++)
+            // {
+            //     cards.Add(new Card(CardColor.Wild, CardValue.Wild));
+            //     cards.Add(new Card(CardColor.Wild, CardValue.WildDrawFour));
+            // }
 
             return new Deck(cards);
         }
