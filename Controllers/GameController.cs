@@ -34,5 +34,18 @@ namespace Uno.API.Controllers
 
             return Ok(response);
         }
+
+        [HttpPost("{gameId}/draw")]
+        public async Task<IActionResult> DrawCard([FromRoute] string gameId, [FromBody] DrawCardRequestDto request)
+        {
+            var response = await _gameService.DrawCardAsync(gameId, request);
+
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+
+            return Ok(response);
+        }
     }
 }

@@ -7,5 +7,6 @@ namespace Uno.API.Services.Interfaces
     {
         Task<StartGameResponseDto> StartGameAsync(StartGameRequestDto request);
         Task<PlayCardResponseDto> PlayCardAsync(string gameId, PlayCardRequestDto request);
+        Task<DrawCardResponseDto> DrawCardAsync(string gameId, DrawCardRequestDto request);
     }
 }

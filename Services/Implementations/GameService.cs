@@ -102,6 +102,83 @@ namespace Uno.API.Services.Implementations
             };
         }
 
+        public async Task<DrawCardResponseDto> DrawCardAsync(string gameId, DrawCardRequestDto request)
+        {
+            var game = await _redisService.GetAsync<Game>($"game:{gameId}");
+
+            if (game == null)
+            {
+                return new DrawCardResponseDto
+                {
+                    Success = false,
+                    Message = "Game not found"
+                };
+            }
+
+            var player = game.GetPlayers().FirstOrDefault(p => p.Id == request.PlayerId);
+
+            if (player == null)
+            {
+                return new DrawCardResponseDto
+                {
+                    Success = false,
+                    Message = "Player not found"
+                };
+            }
+
+            if (game.GetCurrentPlayer().Id != request.PlayerId)
+            {
+                return new DrawCardResponseDto
+                {
+                    Success = false,
+                    Message = "Not your turn"
+                };
+            }
+
+            var playableCards = game.GetPlayableCardsForPlayer(player);
+            if (playableCards.Count > 0)
+            {
+                return new DrawCardResponseDto
+                {
+                    Success = false,
+                    Message = "You have playable cards, you must play one"
+                };
+            }
+
+            var events = new List<GameEventDto>();
+            var drawnCard = game.DrawCard(player);
+            bool cardWasPlayed = false;
+
+            if (game.IsCardMatch(drawnCard))
+            {
+                var cardIdx = game.PlayCard(player, drawnCard.Id);
+                events.Add(new GameEventDto(GameEventType.DrawCard, player.Id, null));
+                events.Add(new GameEventDto(GameEventType.PlayCard, player.Id, cardIdx));
+                cardWasPlayed = true;
+            }
+            else
+            {
+                events.Add(new GameEventDto(GameEventType.DrawCard, player.Id, null));
+            }
+
+            game.NextTurn();
+
+            ProcessBotTurns(game, events);
+
+            await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
+
+            var gameState = BuildGameState(game);
+
+            return new DrawCardResponseDto
+            {
+                Success = true,
+                Message = cardWasPlayed ? "Card drawn and played" : "Card drawn",
+                CardWasPlayed = cardWasPlayed,
+                GameState = gameState,
+                Events = events
+            };
+        }
+
         private ICollectionCard CreateStandardDeck()
         {
             var cards = new List<ICard>();
