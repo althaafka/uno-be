@@ -71,9 +71,9 @@ namespace Uno.API.Services.Implementations
                 };
             }
 
-            bool cardPlayed = game.PlayCard(player, request.CardId);
+            int? cardPlayed = game.PlayCard(player, request.CardId);
 
-            if (!cardPlayed)
+            if (!cardPlayed.HasValue)
             {
                 return new PlayCardResponseDto
                 {
@@ -81,6 +81,13 @@ namespace Uno.API.Services.Implementations
                     Message = "Invalid card play"
                 };
             }
+
+            var events = new List<GameEventDto>();
+            events.Add(new GameEventDto(GameEventType.PlayCard, player.Id, cardPlayed));
+
+            game.NextTurn();
+
+            ProcessBotTurns(game, events);
 
             await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
 
@@ -90,7 +97,8 @@ namespace Uno.API.Services.Implementations
             {
                 Success = true,
                 Message = "Card played successfully",
-                GameState = gameState
+                GameState = gameState,
+                Events = events
             };
         }
 
@@ -140,6 +148,34 @@ namespace Uno.API.Services.Implementations
             return players;
         }
 
+        private void ProcessBotTurns(Game game, List<GameEventDto> events)
+        {
+            var currentPlayer = game.GetCurrentPlayer();
+
+            while (!currentPlayer.IsHuman)
+            {
+                var botEvent = ExecuteBotTurn(game, currentPlayer);
+                events.Add(botEvent);
+
+                game.NextTurn();
+                currentPlayer = game.GetCurrentPlayer();
+            }
+        }
+
+        private GameEventDto ExecuteBotTurn(Game game, IPlayer bot)
+        {
+            var cardToPlay = game.SelectRandomPlayableCard(bot);
+
+            if (cardToPlay != null)
+            {
+                var cardIdx = game.PlayCard(bot, cardToPlay.Id);
+                return new GameEventDto(GameEventType.PlayCard, bot.Id, cardIdx);
+            }
+
+            game.DrawCard(bot);
+            return new GameEventDto(GameEventType.DrawCard, bot.Id, null);
+        }
+
         private GameStateDto BuildGameState(Game game)
         {
             var playerStates = new List<PlayerStateDto>();
@@ -179,5 +215,6 @@ namespace Uno.API.Services.Implementations
                 DeckCardCount = game.GetDeckCount()
             };
         }
+
     }
 }

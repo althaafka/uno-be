@@ -153,19 +153,19 @@ public class Game
         return card;
     }
 
-    public bool PlayCard(IPlayer player, string cardId)
+    public int? PlayCard(IPlayer player, string cardId)
     {
         int cardIdx = Hands[player.Id].Cards.FindIndex(card => card.Id == cardId);
-        if (cardIdx == -1) return false;
+        if (cardIdx == -1) return null;
 
         ICard card = Hands[player.Id].Cards[cardIdx];
-        if (!IsCardMatch(card)) return false;
+        if (!IsCardMatch(card)) return null;
 
         Hands[player.Id].Cards.RemoveAt(cardIdx);
         DiscardPile.Cards.Add(card);
 
         OnGameEvent?.Invoke($"{player.Name} play a card");
-        return true;
+        return cardIdx;
     }
 
     public bool IsCardMatch(ICard card)
@@ -173,5 +173,50 @@ public class Game
         ICard? topCard = GetTopDiscardCard();
         if(card.Color == topCard?.Color || card.Color == CardColor.Wild) return true;
         return card.Value == topCard?.Value;
+    }
+
+    public void NextTurn()
+    {
+        if (Direction == GameDirection.Clockwise)
+        {
+            CurrentPlayerIdx = (CurrentPlayerIdx + 1) % Players.Count;
+        }
+        else
+        {
+            CurrentPlayerIdx = (CurrentPlayerIdx - 1 + Players.Count) % Players.Count;
+        }
+    }
+
+    public List<ICard> GetAllPlayableCard(int playerIdx)
+    {
+        if (playerIdx < 0 || playerIdx >= Players.Count)
+        {
+            return new List<ICard>();
+        }
+
+        var player = Players[playerIdx];
+        return GetPlayableCardsForPlayer(player);
+    }
+
+    public List<ICard> GetPlayableCardsForPlayer(IPlayer player)
+    {
+        if (!Hands.TryGetValue(player.Id, out var hand))
+        {
+            return [];
+        }
+
+        return hand.Cards.Where(card => IsCardMatch(card)).ToList();
+    }
+
+    public ICard? SelectRandomPlayableCard(IPlayer player)
+    {
+        var playableCards = GetPlayableCardsForPlayer(player);
+        if (playableCards.Count == 0)
+        {
+            return null;
+        }
+
+        var random = new Random();
+        return playableCards[random.Next(playableCards.Count)];
     }
 }
