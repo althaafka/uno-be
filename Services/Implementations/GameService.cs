@@ -82,8 +82,16 @@ namespace Uno.API.Services.Implementations
                 };
             }
 
+            var topCard = game.GetTopDiscardCard();
+            var cardDto = topCard != null ? new CardDto
+            {
+                Id = topCard.Id,
+                Color = topCard.Color,
+                Value = topCard.Value
+            } : null;
+
             var events = new List<GameEventDto>();
-            events.Add(new GameEventDto(GameEventType.PlayCard, player.Id, cardPlayed));
+            events.Add(new GameEventDto(GameEventType.PlayCard, player.Id, cardPlayed, cardDto));
 
             game.NextTurn();
 
@@ -147,18 +155,24 @@ namespace Uno.API.Services.Implementations
 
             var events = new List<GameEventDto>();
             var drawnCard = game.DrawCard(player);
+            var drawnCardDto = new CardDto
+            {
+                Id = drawnCard.Id,
+                Color = drawnCard.Color,
+                Value = drawnCard.Value
+            };
             bool cardWasPlayed = false;
 
             if (game.IsCardMatch(drawnCard))
             {
                 var cardIdx = game.PlayCard(player, drawnCard.Id);
-                events.Add(new GameEventDto(GameEventType.DrawCard, player.Id, null));
-                events.Add(new GameEventDto(GameEventType.PlayCard, player.Id, cardIdx));
+                events.Add(new GameEventDto(GameEventType.DrawCard, player.Id, null, drawnCardDto));
+                events.Add(new GameEventDto(GameEventType.PlayCard, player.Id, cardIdx, drawnCardDto));
                 cardWasPlayed = true;
             }
             else
             {
-                events.Add(new GameEventDto(GameEventType.DrawCard, player.Id, null));
+                events.Add(new GameEventDto(GameEventType.DrawCard, player.Id, null, drawnCardDto));
             }
 
             game.NextTurn();
@@ -258,17 +272,17 @@ namespace Uno.API.Services.Implementations
             }
 
             var drawnCard = game.DrawCard(bot);
-            var drawnCardDto = new CardDto
-            {
-                Id = drawnCard.Id,
-                Color = drawnCard.Color,
-                Value = drawnCard.Value
-            };
-            events.Add(new GameEventDto(GameEventType.DrawCard, bot.Id, null, drawnCardDto));
+            events.Add(new GameEventDto(GameEventType.DrawCard, bot.Id, null));
 
             if (game.IsCardMatch(drawnCard))
             {
                 var cardIdx = game.PlayCard(bot, drawnCard.Id);
+                var drawnCardDto = new CardDto
+                {
+                    Id = drawnCard.Id,
+                    Color = drawnCard.Color,
+                    Value = drawnCard.Value
+                };
                 events.Add(new GameEventDto(GameEventType.PlayCard, bot.Id, cardIdx, drawnCardDto));
             }
 
