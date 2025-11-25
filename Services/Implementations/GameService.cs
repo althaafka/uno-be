@@ -93,19 +93,31 @@ namespace Uno.API.Services.Implementations
             var events = new List<GameEventDto>();
             events.Add(new GameEventDto(GameEventType.PlayCard, player.Id, cardPlayed, cardDto));
 
+            if (game.GetPlayerHandCount(player) == 0)
+            {
+                events.Add(new GameEventDto(GameEventType.GameOver, player.Id, null));
+                await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
+
+                return new PlayCardResponseDto
+                {
+                    Success = true,
+                    Message = "Game Over! You won!",
+                    GameState = BuildGameState(game),
+                    Events = events
+                };
+            }
+
             game.NextTurn();
 
             ProcessBotTurns(game, events);
 
             await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
 
-            var gameState = BuildGameState(game);
-
             return new PlayCardResponseDto
             {
                 Success = true,
                 Message = "Card played successfully",
-                GameState = gameState,
+                GameState = BuildGameState(game),
                 Events = events
             };
         }
@@ -169,6 +181,21 @@ namespace Uno.API.Services.Implementations
                 events.Add(new GameEventDto(GameEventType.DrawCard, player.Id, null, drawnCardDto));
                 events.Add(new GameEventDto(GameEventType.PlayCard, player.Id, cardIdx, drawnCardDto));
                 cardWasPlayed = true;
+
+                if (game.GetPlayerHandCount(player) == 0)
+                {
+                    events.Add(new GameEventDto(GameEventType.GameOver, player.Id, null));
+                    await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
+
+                    return new DrawCardResponseDto
+                    {
+                        Success = true,
+                        Message = "Game Over! You won!",
+                        CardWasPlayed = cardWasPlayed,
+                        GameState = BuildGameState(game),
+                        Events = events
+                    };
+                }
             }
             else
             {
@@ -181,14 +208,12 @@ namespace Uno.API.Services.Implementations
 
             await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
 
-            var gameState = BuildGameState(game);
-
             return new DrawCardResponseDto
             {
                 Success = true,
                 Message = cardWasPlayed ? "Card drawn and played" : "Card drawn",
                 CardWasPlayed = cardWasPlayed,
-                GameState = gameState,
+                GameState = BuildGameState(game),
                 Events = events
             };
         }
@@ -248,6 +273,12 @@ namespace Uno.API.Services.Implementations
                 var botEvents = ExecuteBotTurn(game, currentPlayer);
                 events.AddRange(botEvents);
 
+                // Check if game is over
+                if (botEvents.Any(e => e.EventType == GameEventType.GameOver))
+                {
+                    return;
+                }
+
                 game.NextTurn();
                 currentPlayer = game.GetCurrentPlayer();
             }
@@ -268,6 +299,13 @@ namespace Uno.API.Services.Implementations
                 };
                 var cardIdx = game.PlayCard(bot, cardToPlay.Id);
                 events.Add(new GameEventDto(GameEventType.PlayCard, bot.Id, cardIdx, cardDto));
+
+                // Check if bot won
+                if (game.GetPlayerHandCount(bot) == 0)
+                {
+                    events.Add(new GameEventDto(GameEventType.GameOver, bot.Id, null));
+                }
+
                 return events;
             }
 
@@ -284,6 +322,11 @@ namespace Uno.API.Services.Implementations
                     Value = drawnCard.Value
                 };
                 events.Add(new GameEventDto(GameEventType.PlayCard, bot.Id, cardIdx, drawnCardDto));
+
+                if (game.GetPlayerHandCount(bot) == 0)
+                {
+                    events.Add(new GameEventDto(GameEventType.GameOver, bot.Id, null));
+                }
             }
 
             return events;

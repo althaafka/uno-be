@@ -6,6 +6,7 @@ public enum GameEventType
 {
     PlayCard,
     DrawCard,
+    GameOver,
 }
 
 public class GameEventDto
