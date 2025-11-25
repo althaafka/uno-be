@@ -231,16 +231,17 @@ namespace Uno.API.Services.Implementations
 
             while (!currentPlayer.IsHuman)
             {
-                var botEvent = ExecuteBotTurn(game, currentPlayer);
-                events.Add(botEvent);
+                var botEvents = ExecuteBotTurn(game, currentPlayer);
+                events.AddRange(botEvents);
 
                 game.NextTurn();
                 currentPlayer = game.GetCurrentPlayer();
             }
         }
 
-        private GameEventDto ExecuteBotTurn(Game game, IPlayer bot)
+        private List<GameEventDto> ExecuteBotTurn(Game game, IPlayer bot)
         {
+            var events = new List<GameEventDto>();
             var cardToPlay = game.SelectRandomPlayableCard(bot);
 
             if (cardToPlay != null)
@@ -252,11 +253,26 @@ namespace Uno.API.Services.Implementations
                     Value = cardToPlay.Value
                 };
                 var cardIdx = game.PlayCard(bot, cardToPlay.Id);
-                return new GameEventDto(GameEventType.PlayCard, bot.Id, cardIdx, cardDto);
+                events.Add(new GameEventDto(GameEventType.PlayCard, bot.Id, cardIdx, cardDto));
+                return events;
             }
 
-            game.DrawCard(bot);
-            return new GameEventDto(GameEventType.DrawCard, bot.Id, null);
+            var drawnCard = game.DrawCard(bot);
+            var drawnCardDto = new CardDto
+            {
+                Id = drawnCard.Id,
+                Color = drawnCard.Color,
+                Value = drawnCard.Value
+            };
+            events.Add(new GameEventDto(GameEventType.DrawCard, bot.Id, null, drawnCardDto));
+
+            if (game.IsCardMatch(drawnCard))
+            {
+                var cardIdx = game.PlayCard(bot, drawnCard.Id);
+                events.Add(new GameEventDto(GameEventType.PlayCard, bot.Id, cardIdx, drawnCardDto));
+            }
+
+            return events;
         }
 
         private GameStateDto BuildGameState(Game game)
