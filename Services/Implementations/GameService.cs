@@ -158,20 +158,45 @@ namespace Uno.API.Services.Implementations
                 };
             }
 
-            // Event list
-            var events = new List<GameEventDto>();
-            game.OnGameEvent = events.Add;
-
-            var (success, message, cardWasPlayed) = game.DrawTurn(request.PlayerId);
-
-            if (!success)
+            // Validate player exists
+            var player = game.GetPlayerById(request.PlayerId);
+            if (player == null)
             {
                 return new DrawCardResponseDto
                 {
                     Success = false,
-                    Message = message
+                    Message = "Player not found"
                 };
             }
+
+            // Validate it's player's turn
+            if (game.GetCurrentPlayer().Id != request.PlayerId)
+            {
+                return new DrawCardResponseDto
+                {
+                    Success = false,
+                    Message = "Not your turn"
+                };
+            }
+
+            // Check if player has playable cards
+            var playableCards = game.GetPlayableCardsForPlayer(player);
+            if (playableCards.Count > 0)
+            {
+                return new DrawCardResponseDto
+                {
+                    Success = false,
+                    Message = "You have playable cards, you must play one"
+                };
+            }
+
+            // Event list
+            var events = new List<GameEventDto>();
+            game.OnGameEvent = events.Add;
+
+            var cardWasPlayed = game.DrawTurn(request.PlayerId);
+
+            var message = cardWasPlayed ? "Card drawn and played" : "Card drawn";
 
             await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
 
