@@ -1,3 +1,5 @@
+using Uno.API.Models.DTOs.Responses;
+
 namespace Uno.API.Models.Domain;
 
 public class Game
@@ -10,7 +12,7 @@ public class Game
     public GameDirection Direction { get; set; }
     public Dictionary<string, ICollectionCard> Hands { get; set; }
 
-    public Action<string>? OnGameEvent;
+    public Action<GameEventDto>? OnGameEvent;
 
     public string GameId { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -109,7 +111,6 @@ public class Game
             Deck.Cards[k] = Deck.Cards[n];
             Deck.Cards[n] = temp;
         }
-        OnGameEvent?.Invoke("Deck shuffled");
     }
 
     public void DistributeCards()
@@ -136,11 +137,9 @@ public class Game
             DiscardPile.Cards.Add(firstCard);
             CurrentColor = firstCard.Color;
         }
-
-        OnGameEvent?.Invoke("Cards distributed to all players");
     }
 
-    public ICard DrawCard(IPlayer player)
+    private ICard DrawCard(IPlayer player, bool emitEvent = true)
     {
         if (Deck.Cards.Count == 0) // TO DO: refill from pile
             throw new InvalidOperationException("No cards left in deck");
@@ -149,11 +148,20 @@ public class Game
         Deck.Cards.RemoveAt(0);
         Hands[player.Id].Cards.Add(card);
 
-        OnGameEvent?.Invoke($"{player.Name} drew a card");
+        if (emitEvent)
+        {
+            OnGameEvent?.Invoke(new GameEventDto(
+                GameEventType.DrawCard,
+                player.Id,
+                null,
+                new CardDto { Id = card.Id, Color = card.Color, Value = card.Value }
+            ));
+        }
+
         return card;
     }
 
-    public int? PlayCard(IPlayer player, string cardId)
+    private int? PlayCard(IPlayer player, string cardId)
     {
         int cardIdx = Hands[player.Id].Cards.FindIndex(card => card.Id == cardId);
         if (cardIdx == -1) return null;
@@ -166,7 +174,13 @@ public class Game
 
         CurrentColor = card.Color;
 
-        OnGameEvent?.Invoke($"{player.Name} play a card");
+        OnGameEvent?.Invoke(new GameEventDto(
+            GameEventType.PlayCard,
+            player.Id,
+            cardIdx,
+            new CardDto { Id = card.Id, Color = card.Color, Value = card.Value }
+        ));
+
         return cardIdx;
     }
 
@@ -220,5 +234,132 @@ public class Game
 
         var random = new Random();
         return playableCards[random.Next(playableCards.Count)];
+    }
+
+    public (bool Success, string Message) PlayTurn(string playerId, string cardId, CardColor? chosenColor = null)
+    {
+        var player = Players.FirstOrDefault(p => p.Id == playerId);
+        if (player == null)
+        {
+            return (false, "Player not found");
+        }
+
+        if (GetCurrentPlayer().Id != playerId)
+        {
+            return (false, "Not your turn");
+        }
+
+        int? cardIdx = PlayCard(player, cardId);
+        if (!cardIdx.HasValue)
+        {
+            return (false, "Invalid card play");
+        }
+
+        if (GetPlayerHandCount(player) == 0)
+        {
+            OnGameEvent?.Invoke(new GameEventDto(GameEventType.GameOver, player.Id, null));
+            return (true, "Game Over! You won!");
+        }
+
+        NextTurn();
+
+        ProcessBotTurns();
+
+        return (true, "Card played successfully");
+    }
+
+    public (bool Success, string Message, bool CardWasPlayed) DrawTurn(string playerId)
+    {
+        // Validate player exists
+        var player = Players.FirstOrDefault(p => p.Id == playerId);
+        if (player == null)
+        {
+            return (false, "Player not found", false);
+        }
+
+        // Validate it's player's turn
+        if (GetCurrentPlayer().Id != playerId)
+        {
+            return (false, "Not your turn", false);
+        }
+
+        // Check if player has playable cards - must draw only if no playable cards
+        var playableCards = GetPlayableCardsForPlayer(player);
+        if (playableCards.Count > 0)
+        {
+            return (false, "You have playable cards, you must play one", false);
+        }
+
+        // Draw a card
+        var drawnCard = DrawCard(player, emitEvent: true);
+        bool cardWasPlayed = false;
+
+        // If the drawn card is playable, play it automatically
+        if (IsCardMatch(drawnCard))
+        {
+            PlayCard(player, drawnCard.Id);
+            cardWasPlayed = true;
+
+            // Check if player won after playing the drawn card
+            if (GetPlayerHandCount(player) == 0)
+            {
+                OnGameEvent?.Invoke(new GameEventDto(GameEventType.GameOver, player.Id, null));
+                return (true, "Game Over! You won!", cardWasPlayed);
+            }
+        }
+
+        // Move to next turn
+        NextTurn();
+
+        // Process bot turns
+        ProcessBotTurns();
+
+        return (true, cardWasPlayed ? "Card drawn and played" : "Card drawn", cardWasPlayed);
+    }
+
+    private void ProcessBotTurns()
+    {
+        var currentPlayer = GetCurrentPlayer();
+
+        while (!currentPlayer.IsHuman)
+        {
+            ExecuteBotTurn(currentPlayer);
+
+            if (GetPlayerHandCount(currentPlayer) == 0)
+            {
+                return;
+            }
+
+            NextTurn();
+            currentPlayer = GetCurrentPlayer();
+        }
+    }
+
+    private void ExecuteBotTurn(IPlayer bot)
+    {
+        var cardToPlay = SelectRandomPlayableCard(bot);
+
+        if (cardToPlay != null)
+        {
+            PlayCard(bot, cardToPlay.Id);
+
+            if (GetPlayerHandCount(bot) == 0)
+            {
+                OnGameEvent?.Invoke(new GameEventDto(GameEventType.GameOver, bot.Id, null));
+            }
+
+            return;
+        }
+
+        var drawnCard = DrawCard(bot, emitEvent: true);
+        if (IsCardMatch(drawnCard))
+        {
+            PlayCard(bot, drawnCard.Id);
+
+            if (GetPlayerHandCount(bot) == 0)
+            {
+                OnGameEvent?.Invoke(new GameEventDto(GameEventType.GameOver, bot.Id, null));
+            }
+        }
     }
 }
