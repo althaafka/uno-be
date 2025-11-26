@@ -26,12 +26,14 @@ namespace Uno.API.Services.Implementations
                     cards.Add(new Card(color, (CardValue)i));
                 }
 
-                // cards.Add(new Card(color, CardValue.Skip));
-                // cards.Add(new Card(color, CardValue.Skip));
-                // cards.Add(new Card(color, CardValue.Reverse));
-                // cards.Add(new Card(color, CardValue.Reverse));
-                // cards.Add(new Card(color, CardValue.DrawTwo));
-                // cards.Add(new Card(color, CardValue.DrawTwo));
+                cards.Add(new Card(color, CardValue.Skip));
+                cards.Add(new Card(color, CardValue.Skip));
+                cards.Add(new Card(color, CardValue.Reverse));
+                cards.Add(new Card(color, CardValue.Reverse));
+                cards.Add(new Card(color, CardValue.DrawTwo));
+                cards.Add(new Card(color, CardValue.DrawTwo));
+                cards.Add(new Card(color, CardValue.DrawTwo));
+                cards.Add(new Card(color, CardValue.DrawTwo));
             }
 
             // for (int i = 0; i < 4; i++)
@@ -132,7 +134,7 @@ namespace Uno.API.Services.Implementations
             var events = new List<GameEventDto>();
             game.OnGameEvent = events.Add;
 
-            game.PlayTurn(request.PlayerId, request.CardId);
+            game.PlayTurn(request.PlayerId, request.CardId, request.ChosenColor);
 
             await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
 

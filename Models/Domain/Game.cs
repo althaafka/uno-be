@@ -165,7 +165,7 @@ public class Game
         return card;
     }
 
-    public void PlayCard(IPlayer player, string cardId)
+    public void PlayCard(IPlayer player, string cardId, CardColor? chosenColor = null)
     {
         int cardIdx = Hands[player.Id].Cards.FindIndex(card => card.Id == cardId);
 
@@ -182,7 +182,59 @@ public class Game
             cardIdx,
             new CardDto { Id = card.Id, Color = card.Color, Value = card.Value }
         ));
+
+        HandleCardAction(card, player, chosenColor);
     }
+
+    private void HandleCardAction(ICard card, IPlayer player, CardColor? chosenColor)
+    {
+        switch (card.Value)
+        {
+            case CardValue.Skip:
+                OnGameEvent?.Invoke(new GameEventDto(
+                    GameEventType.Skip,
+                    player.Id,
+                    null
+                ));
+                NextTurn();
+                break;
+
+            case CardValue.Reverse:
+                Direction = Direction == GameDirection.Clockwise
+                    ? GameDirection.CounterClockwise
+                    : GameDirection.Clockwise;
+                OnGameEvent?.Invoke(new GameEventDto(
+                    GameEventType.Reverse,
+                    player.Id,
+                    null
+                ));
+                break;
+
+            case CardValue.DrawTwo:
+                OnGameEvent?.Invoke(new GameEventDto(
+                    GameEventType.DrawTwo,
+                    player.Id,
+                    null
+                ));
+
+                NextTurn();
+                var nextPlayer = GetCurrentPlayer();
+
+                DrawCard(nextPlayer);
+                DrawCard(nextPlayer);
+
+                break;
+
+            case CardValue.WildDrawFour:
+                //later
+                break;
+
+            case CardValue.Wild:
+                // later
+                break;
+        }
+    }
+
 
     public bool IsCardMatch(ICard card)
     {
@@ -236,11 +288,11 @@ public class Game
         return playableCards[random.Next(playableCards.Count)];
     }
 
-    public void PlayTurn(string playerId, string cardId)
+    public void PlayTurn(string playerId, string cardId, CardColor? chosenColor = null)
     {
         var player = Players.First(p => p.Id == playerId);
 
-        PlayCard(player, cardId);
+        PlayCard(player, cardId, chosenColor);
 
         if (GetPlayerHandCount(player) == 0)
         {
