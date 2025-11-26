@@ -9,6 +9,40 @@ namespace Uno.API.Services.Implementations
     {
         private readonly IRedisService _redisService;
 
+        private static readonly List<ICard> _standardDeckTemplate = BuildDeckTemplate();
+
+        private static List<ICard> BuildDeckTemplate()
+        {
+            var cards = new List<ICard>();
+            var colors = new[] { CardColor.Red, CardColor.Blue, CardColor.Green, CardColor.Yellow };
+
+            foreach (var color in colors)
+            {
+                cards.Add(new Card(color, CardValue.Zero));
+
+                for (int i = 1; i <= 9; i++)
+                {
+                    cards.Add(new Card(color, (CardValue)i));
+                    cards.Add(new Card(color, (CardValue)i));
+                }
+
+                // cards.Add(new Card(color, CardValue.Skip));
+                // cards.Add(new Card(color, CardValue.Skip));
+                // cards.Add(new Card(color, CardValue.Reverse));
+                // cards.Add(new Card(color, CardValue.Reverse));
+                // cards.Add(new Card(color, CardValue.DrawTwo));
+                // cards.Add(new Card(color, CardValue.DrawTwo));
+            }
+
+            // for (int i = 0; i < 4; i++)
+            // {
+            //     cards.Add(new Card(CardColor.Wild, CardValue.Wild));
+            //     cards.Add(new Card(CardColor.Wild, CardValue.WildDrawFour));
+            // }
+
+            return cards;
+        }
+
         public GameService(IRedisService redisService)
         {
             _redisService = redisService;
@@ -119,33 +153,9 @@ namespace Uno.API.Services.Implementations
 
         private ICollectionCard CreateStandardDeck()
         {
-            var cards = new List<ICard>();
-
-            var colors = new[] { CardColor.Red, CardColor.Blue, CardColor.Green, CardColor.Yellow };
-
-            foreach (var color in colors)
-            {
-                cards.Add(new Card(color, CardValue.Zero));
-
-                for (int i = 1; i <= 9; i++)
-                {
-                    cards.Add(new Card(color, (CardValue)i));
-                    cards.Add(new Card(color, (CardValue)i));
-                }
-
-                // cards.Add(new Card(color, CardValue.Skip));
-                // cards.Add(new Card(color, CardValue.Skip));
-                // cards.Add(new Card(color, CardValue.Reverse));
-                // cards.Add(new Card(color, CardValue.Reverse));
-                // cards.Add(new Card(color, CardValue.DrawTwo));
-                // cards.Add(new Card(color, CardValue.DrawTwo));
-            }
-
-            // for (int i = 0; i < 4; i++)
-            // {
-            //     cards.Add(new Card(CardColor.Wild, CardValue.Wild));
-            //     cards.Add(new Card(CardColor.Wild, CardValue.WildDrawFour));
-            // }
+            var cards = _standardDeckTemplate
+                .Select(c => (ICard)new Card(c.Color, c.Value))
+                .ToList();
 
             return new Deck(cards);
         }
