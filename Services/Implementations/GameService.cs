@@ -85,27 +85,61 @@ namespace Uno.API.Services.Implementations
                 };
             }
 
-            // Event list
-            var events = new List<GameEventDto>();
-            game.OnGameEvent = events.Add;
-
-            var (success, message) = game.PlayTurn(request.PlayerId, request.CardId, request.ChosenColor);
-
-            if (!success)
+            // Validate player exists
+            var player = game.GetPlayerById(request.PlayerId);
+            if (player == null)
             {
                 return new PlayCardResponseDto
                 {
                     Success = false,
-                    Message = message
+                    Message = "Player not found"
                 };
             }
+
+            // Validate it's player's turn
+            if (game.GetCurrentPlayer().Id != request.PlayerId)
+            {
+                return new PlayCardResponseDto
+                {
+                    Success = false,
+                    Message = "Not your turn"
+                };
+            }
+
+            // Validate card exists in player's hand
+            var playerHand = game.GetPlayerHand(player);
+            var cardToPlay = playerHand.FirstOrDefault(c => c.Id == request.CardId);
+            if (cardToPlay == null)
+            {
+                return new PlayCardResponseDto
+                {
+                    Success = false,
+                    Message = "Card not found in your hand"
+                };
+            }
+
+            // Validate card can be played
+            if (!game.IsCardMatch(cardToPlay))
+            {
+                return new PlayCardResponseDto
+                {
+                    Success = false,
+                    Message = "Card cannot be played"
+                };
+            }
+
+            // Event list
+            var events = new List<GameEventDto>();
+            game.OnGameEvent = events.Add;
+
+            game.PlayTurn(request.PlayerId, request.CardId);
 
             await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
 
             return new PlayCardResponseDto
             {
                 Success = true,
-                Message = message,
+                Message = "Card player successfully",
                 GameState = BuildGameState(game),
                 Events = events
             };

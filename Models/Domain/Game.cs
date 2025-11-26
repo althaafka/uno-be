@@ -98,6 +98,11 @@ public class Game
         return Players[CurrentPlayerIdx];
     }
 
+    public IPlayer? GetPlayerById(string playerId)
+    {
+        return Players.FirstOrDefault(p => p.Id == playerId);
+    }
+
     // Event
     public void ShuffleDeck()
     {
@@ -161,13 +166,11 @@ public class Game
         return card;
     }
 
-    private int? PlayCard(IPlayer player, string cardId)
+    public void PlayCard(IPlayer player, string cardId)
     {
         int cardIdx = Hands[player.Id].Cards.FindIndex(card => card.Id == cardId);
-        if (cardIdx == -1) return null;
 
         ICard card = Hands[player.Id].Cards[cardIdx];
-        if (!IsCardMatch(card)) return null;
 
         Hands[player.Id].Cards.RemoveAt(cardIdx);
         DiscardPile.Cards.Add(card);
@@ -180,8 +183,6 @@ public class Game
             cardIdx,
             new CardDto { Id = card.Id, Color = card.Color, Value = card.Value }
         ));
-
-        return cardIdx;
     }
 
     public bool IsCardMatch(ICard card)
@@ -236,36 +237,21 @@ public class Game
         return playableCards[random.Next(playableCards.Count)];
     }
 
-    public (bool Success, string Message) PlayTurn(string playerId, string cardId, CardColor? chosenColor = null)
+    public void PlayTurn(string playerId, string cardId)
     {
-        var player = Players.FirstOrDefault(p => p.Id == playerId);
-        if (player == null)
-        {
-            return (false, "Player not found");
-        }
+        var player = Players.First(p => p.Id == playerId);
 
-        if (GetCurrentPlayer().Id != playerId)
-        {
-            return (false, "Not your turn");
-        }
-
-        int? cardIdx = PlayCard(player, cardId);
-        if (!cardIdx.HasValue)
-        {
-            return (false, "Invalid card play");
-        }
+        PlayCard(player, cardId);
 
         if (GetPlayerHandCount(player) == 0)
         {
             OnGameEvent?.Invoke(new GameEventDto(GameEventType.GameOver, player.Id, null));
-            return (true, "Game Over! You won!");
+            return;
         }
 
         NextTurn();
 
         ProcessBotTurns();
-
-        return (true, "Card played successfully");
     }
 
     public (bool Success, string Message, bool CardWasPlayed) DrawTurn(string playerId)
