@@ -36,11 +36,11 @@ namespace Uno.API.Services.Implementations
                 cards.Add(new Card(color, CardValue.DrawTwo));
             }
 
-            // for (int i = 0; i < 4; i++)
-            // {
-            //     cards.Add(new Card(CardColor.Wild, CardValue.Wild));
-            //     cards.Add(new Card(CardColor.Wild, CardValue.WildDrawFour));
-            // }
+            for (int i = 0; i < 4; i++)
+            {
+                cards.Add(new Card(CardColor.Wild, CardValue.Wild));
+                // cards.Add(new Card(CardColor.Wild, CardValue.WildDrawFour));
+            }
 
             return cards;
         }
@@ -129,6 +129,7 @@ namespace Uno.API.Services.Implementations
                     Message = "Card cannot be played"
                 };
             }
+
 
             // Event list
             var events = new List<GameEventDto>();

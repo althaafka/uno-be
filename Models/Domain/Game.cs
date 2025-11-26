@@ -230,7 +230,17 @@ public class Game
                 break;
 
             case CardValue.Wild:
-                // later
+                if (chosenColor.HasValue && chosenColor.Value != CardColor.Wild)
+                {
+                    CurrentColor = chosenColor.Value;
+                    OnGameEvent?.Invoke(new GameEventDto(
+                        GameEventType.ChooseColor,
+                        player.Id,
+                        null,
+                        null,
+                        chosenColor.Value
+                    ));
+                }
                 break;
         }
     }
@@ -239,7 +249,11 @@ public class Game
     public bool IsCardMatch(ICard card)
     {
         ICard? topCard = GetTopDiscardCard();
-        if(card.Color == topCard?.Color || card.Color == CardColor.Wild) return true;
+
+        if (card.Color == CardColor.Wild) return true;
+
+        if (card.Color == CurrentColor) return true;
+
         return card.Value == topCard?.Value;
     }
 
@@ -288,6 +302,28 @@ public class Game
         return playableCards[random.Next(playableCards.Count)];
     }
 
+    public CardColor GetMostCommonColorInHand(IPlayer player)
+    {
+        if (!Hands.TryGetValue(player.Id, out var hand))
+        {
+            return CardColor.Red; // default
+        }
+
+        var colorCounts = hand.Cards
+            .Where(c => c.Color != CardColor.Wild)
+            .GroupBy(c => c.Color)
+            .Select(g => new { Color = g.Key, Count = g.Count() })
+            .OrderByDescending(x => x.Count)
+            .ToList();
+
+        if (colorCounts.Count == 0)
+        {
+            return CardColor.Red; // default if no colored cards
+        }
+
+        return colorCounts[0].Color;
+    }
+
     public void PlayTurn(string playerId, string cardId, CardColor? chosenColor = null)
     {
         var player = Players.First(p => p.Id == playerId);
@@ -314,7 +350,15 @@ public class Game
 
         if (IsCardMatch(drawnCard))
         {
-            PlayCard(player, drawnCard.Id);
+            CardColor? chosenColor = null;
+
+            // If drawn card is Wild, choose the most common color
+            if (drawnCard.Value == CardValue.Wild || drawnCard.Value == CardValue.WildDrawFour)
+            {
+                chosenColor = GetMostCommonColorInHand(player);
+            }
+
+            PlayCard(player, drawnCard.Id, chosenColor);
             cardWasPlayed = true;
 
             if (GetPlayerHandCount(player) == 0)
@@ -355,7 +399,15 @@ public class Game
 
         if (cardToPlay != null)
         {
-            PlayCard(bot, cardToPlay.Id);
+            CardColor? chosenColor = null;
+
+            // If playing Wild card, choose the most common color
+            if (cardToPlay.Value == CardValue.Wild || cardToPlay.Value == CardValue.WildDrawFour)
+            {
+                chosenColor = GetMostCommonColorInHand(bot);
+            }
+
+            PlayCard(bot, cardToPlay.Id, chosenColor);
 
             if (GetPlayerHandCount(bot) == 0)
             {
@@ -368,7 +420,15 @@ public class Game
         var drawnCard = DrawCard(bot);
         if (IsCardMatch(drawnCard))
         {
-            PlayCard(bot, drawnCard.Id);
+            CardColor? chosenColor = null;
+
+            // If drawn card is Wild, choose the most common color
+            if (drawnCard.Value == CardValue.Wild || drawnCard.Value == CardValue.WildDrawFour)
+            {
+                chosenColor = GetMostCommonColorInHand(bot);
+            }
+
+            PlayCard(bot, drawnCard.Id, chosenColor);
 
             if (GetPlayerHandCount(bot) == 0)
             {
