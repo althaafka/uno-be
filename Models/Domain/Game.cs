@@ -138,7 +138,13 @@ public class Game
         if (Deck.Cards.Count > 0)
         {
             var firstCard = Deck.Cards[0];
-            Deck.Cards.RemoveAt(0);
+            int cardIdx = 0;
+            while(firstCard.Color == CardColor.Wild)
+            {
+                cardIdx++;
+                firstCard = Deck.Cards[cardIdx];
+            }
+            Deck.Cards.RemoveAt(cardIdx);
             DiscardPile.Cards.Add(firstCard);
             CurrentColor = firstCard.Color;
         }
