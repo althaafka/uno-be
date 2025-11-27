@@ -150,10 +150,26 @@ public class Game
         }
     }
 
+    private void RefillDeck()
+    {
+        var topCard = DiscardPile.Cards[^1];
+
+        var cardsToRefill = DiscardPile.Cards.Take(DiscardPile.Cards.Count - 1).ToList();
+
+        DiscardPile.Cards.Clear();
+        DiscardPile.Cards.Add(topCard);
+
+        foreach (var card in cardsToRefill)
+            Deck.Cards.Add(card);
+    }
+
     private ICard DrawCard(IPlayer player)
     {
-        if (Deck.Cards.Count == 0) // TO DO: refill from pile
-            throw new InvalidOperationException("No cards left in deck");
+        if (Deck.Cards.Count == 0)
+        {
+            RefillDeck();
+            ShuffleDeck();
+        }
 
         var card = Deck.Cards[0];
         Deck.Cards.RemoveAt(0);
