@@ -10,7 +10,8 @@ public enum GameEventType
     Skip,
     Reverse,
     DrawTwo,
-    ChooseColor
+    ChooseColor,
+    WildDrawFour
 }
 
 public class GameEventDto

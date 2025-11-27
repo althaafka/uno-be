@@ -226,7 +226,35 @@ public class Game
                 break;
 
             case CardValue.WildDrawFour:
-                //later
+                // Choose color
+                if (chosenColor.HasValue && chosenColor.Value != CardColor.Wild)
+                {
+                    CurrentColor = chosenColor.Value;
+                    OnGameEvent?.Invoke(new GameEventDto(
+                        GameEventType.ChooseColor,
+                        player.Id,
+                        null,
+                        null,
+                        chosenColor.Value
+                    ));
+                }
+
+                // Emit WildDrawFour event
+                OnGameEvent?.Invoke(new GameEventDto(
+                    GameEventType.WildDrawFour,
+                    player.Id,
+                    null
+                ));
+
+                NextTurn();
+                var nextPlayerDrawFour = GetCurrentPlayer();
+
+                // Draws 4 cards
+                DrawCard(nextPlayerDrawFour);
+                DrawCard(nextPlayerDrawFour);
+                DrawCard(nextPlayerDrawFour);
+                DrawCard(nextPlayerDrawFour);
+
                 break;
 
             case CardValue.Wild:
