@@ -135,7 +135,7 @@ namespace Uno.API.Services.Implementations
             var events = new List<GameEventDto>();
             game.OnGameEvent = events.Add;
 
-            game.PlayTurn(request.PlayerId, request.CardId, request.ChosenColor);
+            game.PlayTurn(request.PlayerId, request.CardId, request.ChosenColor, request.CalledUno);
 
             await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
 

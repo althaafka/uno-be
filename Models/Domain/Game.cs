@@ -352,11 +352,51 @@ public class Game
         return playableCards[random.Next(playableCards.Count)];
     }
 
+    private void CheckAndHandleUnoCall(IPlayer player, bool? hasCalledUno)
+    {
+        if (GetPlayerHandCount(player) != 1)
+        {
+            return;
+        }
+
+        bool shouldCallUno;
+
+        if (player.IsHuman)
+        {
+            shouldCallUno = hasCalledUno ?? false;
+        }
+        else
+        {
+            var random = new Random();
+            shouldCallUno = random.Next(100) >= 10;
+        }
+
+        if (shouldCallUno)
+        {
+            OnGameEvent?.Invoke(new GameEventDto(
+                GameEventType.PlayerCalledUno,
+                player.Id,
+                null
+            ));
+        }
+        else
+        {
+            OnGameEvent?.Invoke(new GameEventDto(
+                GameEventType.PlayerFailedToCallUno,
+                player.Id,
+                null
+            ));
+
+            DrawCard(player);
+            DrawCard(player);
+        }
+    }
+
     public CardColor GetMostCommonColorInHand(IPlayer player)
     {
         if (!Hands.TryGetValue(player.Id, out var hand))
         {
-            return CardColor.Red; // default
+            return CardColor.Red;
         }
 
         var colorCounts = hand.Cards
@@ -368,13 +408,13 @@ public class Game
 
         if (colorCounts.Count == 0)
         {
-            return CardColor.Red; // default if no colored cards
+            return CardColor.Red;
         }
 
         return colorCounts[0].Color;
     }
 
-    public void PlayTurn(string playerId, string cardId, CardColor? chosenColor = null)
+    public void PlayTurn(string playerId, string cardId, CardColor? chosenColor = null, bool? hasCalledUno = null)
     {
         var player = Players.First(p => p.Id == playerId);
 
@@ -385,6 +425,8 @@ public class Game
             OnGameEvent?.Invoke(new GameEventDto(GameEventType.GameOver, player.Id, null));
             return;
         }
+
+        CheckAndHandleUnoCall(player, hasCalledUno);
 
         NextTurn();
 
@@ -462,7 +504,10 @@ public class Game
             if (GetPlayerHandCount(bot) == 0)
             {
                 OnGameEvent?.Invoke(new GameEventDto(GameEventType.GameOver, bot.Id, null));
+                return;
             }
+
+            CheckAndHandleUnoCall(bot, null);
 
             return;
         }
@@ -483,7 +528,10 @@ public class Game
             if (GetPlayerHandCount(bot) == 0)
             {
                 OnGameEvent?.Invoke(new GameEventDto(GameEventType.GameOver, bot.Id, null));
+                return;
             }
+
+            CheckAndHandleUnoCall(bot, null);
         }
     }
 }

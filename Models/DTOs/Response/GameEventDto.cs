@@ -11,7 +11,9 @@ public enum GameEventType
     Reverse,
     DrawTwo,
     ChooseColor,
-    WildDrawFour
+    WildDrawFour,
+    PlayerCalledUno,
+    PlayerFailedToCallUno
 }
 
 public class GameEventDto
