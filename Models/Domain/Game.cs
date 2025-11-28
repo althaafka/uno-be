@@ -426,27 +426,12 @@ public class Game
 
         if (IsCardMatch(drawnCard))
         {
-            CardColor? chosenColor = null;
-
-            // If drawn card is Wild, choose the most common color
-            if (drawnCard.Value == CardValue.Wild || drawnCard.Value == CardValue.WildDrawFour)
-            {
-                chosenColor = GetMostCommonColorInHand(player);
-            }
-
-            PlayCard(player, drawnCard.Id, chosenColor);
             cardWasPlayed = true;
-
-            if (GetPlayerHandCount(player) == 0)
-            {
-                OnGameEvent?.Invoke(new GameEventDto(GameEventType.GameOver, player.Id, null));
-                return cardWasPlayed;
-            }
+        } else
+        {
+            NextTurn();
+            ProcessBotTurns();
         }
-
-        NextTurn();
-
-        ProcessBotTurns();
 
         return cardWasPlayed;
     }

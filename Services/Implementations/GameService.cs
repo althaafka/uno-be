@@ -197,17 +197,14 @@ namespace Uno.API.Services.Implementations
             var events = new List<GameEventDto>();
             game.OnGameEvent = events.Add;
 
-            var cardWasPlayed = game.DrawTurn(request.PlayerId);
-
-            var message = cardWasPlayed ? "Card drawn and played" : "Card drawn";
+            game.DrawTurn(request.PlayerId);
 
             await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
 
             return new DrawCardResponseDto
             {
                 Success = true,
-                Message = message,
-                CardWasPlayed = cardWasPlayed,
+                Message = "Card drawn",
                 GameState = BuildGameState(game),
                 Events = events
             };
