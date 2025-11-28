@@ -187,7 +187,7 @@ public class Game
         return card;
     }
 
-    public void PlayCard(IPlayer player, string cardId, CardColor? chosenColor = null)
+    private void PlayCard(IPlayer player, string cardId, CardColor? chosenColor = null)
     {
         int cardIdx = Hands[player.Id].Cards.FindIndex(card => card.Id == cardId);
 
@@ -307,7 +307,7 @@ public class Game
         return card.Value == topCard?.Value;
     }
 
-    public void NextTurn()
+    private void NextTurn()
     {
         if (Direction == GameDirection.Clockwise)
         {
@@ -317,17 +317,6 @@ public class Game
         {
             CurrentPlayerIdx = (CurrentPlayerIdx - 1 + Players.Count) % Players.Count;
         }
-    }
-
-    public List<ICard> GetAllPlayableCard(int playerIdx)
-    {
-        if (playerIdx < 0 || playerIdx >= Players.Count)
-        {
-            return new List<ICard>();
-        }
-
-        var player = Players[playerIdx];
-        return GetPlayableCardsForPlayer(player);
     }
 
     public List<ICard> GetPlayableCardsForPlayer(IPlayer player)
@@ -340,7 +329,7 @@ public class Game
         return hand.Cards.Where(card => IsCardMatch(card)).ToList();
     }
 
-    public ICard? SelectRandomPlayableCard(IPlayer player)
+    private ICard? SelectRandomPlayableCard(IPlayer player)
     {
         var playableCards = GetPlayableCardsForPlayer(player);
         if (playableCards.Count == 0)
@@ -392,7 +381,7 @@ public class Game
         }
     }
 
-    public CardColor GetMostCommonColorInHand(IPlayer player)
+    private CardColor GetMostCommonColorInHand(IPlayer player)
     {
         if (!Hands.TryGetValue(player.Id, out var hand))
         {
