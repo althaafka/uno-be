@@ -182,7 +182,7 @@ public class Game
         return card;
     }
 
-    private void PlayCard(IPlayer player, string cardId, CardColor? chosenColor = null)
+    private void PlayCard(IPlayer player, string cardId, CardColor? chosenColor = null, bool? hasCalledUno = null)
     {
         int cardIdx = Hands[player.Id].Cards.FindIndex(card => card.Id == cardId);
 
@@ -200,6 +200,7 @@ public class Game
             new CardDto { Id = card.Id, Color = card.Color, Value = card.Value }
         ));
 
+        CheckAndHandleUnoCall(player, hasCalledUno);
         HandleCardAction(card, player, chosenColor);
     }
 
@@ -402,7 +403,7 @@ public class Game
     {
         var player = Players.First(p => p.Id == playerId);
 
-        PlayCard(player, cardId, chosenColor);
+        PlayCard(player, cardId, chosenColor, hasCalledUno);
 
         if (GetPlayerHandCount(player) == 0)
         {
@@ -410,7 +411,6 @@ public class Game
             return;
         }
 
-        CheckAndHandleUnoCall(player, hasCalledUno);
 
         NextTurn();
 
@@ -476,7 +476,6 @@ public class Game
                 return;
             }
 
-            CheckAndHandleUnoCall(bot, null);
 
             return;
         }
@@ -500,7 +499,6 @@ public class Game
                 return;
             }
 
-            CheckAndHandleUnoCall(bot, null);
         }
     }
 }
