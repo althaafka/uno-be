@@ -123,8 +123,6 @@ public class Game
         {
             for (int i = 0; i < cardsPerPlayer; i++)
             {
-                if (Deck.Cards.Count == 0)
-                    throw new InvalidOperationException("Not enough cards in deck to distribute");
 
                 var card = Deck.Cards[0];
                 Deck.Cards.RemoveAt(0);
