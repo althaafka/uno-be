@@ -31,12 +31,9 @@ public class Game
 
     public Game(string gameId, List<IPlayer> players, ICollectionCard deck)
     {
-        if (players == null || players.Count != 4)
-            throw new ArgumentException("Game requires exactly 4 players");
-
         GameId = gameId;
         Players = players;
-        Deck = deck ?? throw new ArgumentNullException(nameof(deck));
+        Deck = deck;
         DiscardPile = new DiscardPile();
         Hands = new Dictionary<string, ICollectionCard>();
         CurrentPlayerIdx = 0;
