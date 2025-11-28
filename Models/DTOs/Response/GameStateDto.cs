@@ -11,19 +11,3 @@ public class GameStateDto
     public GameDirection Direction { get; set; }
     public int DeckCardCount { get; set; }
 }
-
-public class PlayerStateDto
-{
-    public string Id { get; set; }
-    public string Name { get; set; }
-    public bool IsHuman { get; set; }
-    public int CardCount { get; set; }
-    public List<CardDto> Cards { get; set; }
-}
-
-public class CardDto
-{
-    public string Id {get; set;}
-    public CardColor Color { get; set; }
-    public CardValue Value { get; set; }
-}
