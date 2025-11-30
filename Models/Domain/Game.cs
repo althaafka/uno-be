@@ -13,6 +13,7 @@ public class Game
     public Dictionary<string, ICollectionCard> Hands { get; set; }
 
     public Action<GameEventDto>? OnGameEvent;
+    public int InitialCardCount {get; set;}
 
     public string GameId { get; set; }
     public DateTime CreatedAt { get; set; }
@@ -29,7 +30,7 @@ public class Game
         CreatedAt = DateTime.UtcNow;
     }
 
-    public Game(string gameId, List<IPlayer> players, ICollectionCard deck)
+    public Game(string gameId, List<IPlayer> players, ICollectionCard deck, int initialCardCount)
     {
         GameId = gameId;
         Players = players;
@@ -39,6 +40,7 @@ public class Game
         CurrentPlayerIdx = 0;
         Direction = GameDirection.Clockwise;
         CreatedAt = DateTime.UtcNow;
+        InitialCardCount = initialCardCount;
 
         foreach (var player in Players)
         {
@@ -117,11 +119,9 @@ public class Game
 
     public void DistributeCards()
     {
-        const int cardsPerPlayer = 7;
-
         foreach (var player in Players)
         {
-            for (int i = 0; i < cardsPerPlayer; i++)
+            for (int i = 0; i < InitialCardCount; i++)
             {
 
                 var card = Deck.Cards[0];

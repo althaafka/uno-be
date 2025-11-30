@@ -58,7 +58,7 @@ namespace Uno.API.Services.Implementations
 
             var players = CreatePlayers(request.PlayerName, request.PlayerCount);
 
-            var game = new Game(gameId, players, deck);
+            var game = new Game(gameId, players, deck, request.InitialCardCount);
 
             game.ShuffleDeck();
             game.DistributeCards();
