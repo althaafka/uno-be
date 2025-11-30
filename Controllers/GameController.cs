@@ -18,34 +18,40 @@ namespace Uno.API.Controllers
         [HttpPost("start")]
         public async Task<IActionResult> StartGame([FromBody] StartGameRequestDto request)
         {
-            var response = await _gameService.StartGameAsync(request);
-            return Ok(response);
+            var result = await _gameService.StartGameAsync(request);
+
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+
+            return Ok(result);
         }
 
         [HttpPost("{gameId}/play")]
         public async Task<IActionResult> PlayCard([FromRoute] string gameId, [FromBody] PlayCardRequestDto request)
         {
-            var response = await _gameService.PlayCardAsync(gameId, request);
+            var result = await _gameService.PlayCardAsync(gameId, request);
 
-            if (!response.Success)
+            if (!result.Success)
             {
-                return BadRequest(response);
+                return BadRequest(result);
             }
 
-            return Ok(response);
+            return Ok(result);
         }
 
         [HttpPost("{gameId}/draw")]
         public async Task<IActionResult> DrawCard([FromRoute] string gameId, [FromBody] DrawCardRequestDto request)
         {
-            var response = await _gameService.DrawCardAsync(gameId, request);
+            var result = await _gameService.DrawCardAsync(gameId, request);
 
-            if (!response.Success)
+            if (!result.Success)
             {
-                return BadRequest(response);
+                return BadRequest(result);
             }
 
-            return Ok(response);
+            return Ok(result);
         }
     }
 }

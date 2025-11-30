@@ -1,3 +1,4 @@
+using Uno.API.Models.Common;
 using Uno.API.Models.Domain;
 using Uno.API.Models.DTOs.Requests;
 using Uno.API.Models.DTOs.Responses;
@@ -50,164 +51,155 @@ namespace Uno.API.Services.Implementations
             _redisService = redisService;
         }
 
-        public async Task<StartGameResponseDto> StartGameAsync(StartGameRequestDto request)
+        public async Task<ServiceResult<StartGameResponseDto>> StartGameAsync(StartGameRequestDto request)
         {
-            var gameId = Guid.NewGuid().ToString();
-
-            var deck = CreateStandardDeck();
-
-            var players = CreatePlayers(request.PlayerName, request.PlayerCount);
-
-            var game = new Game(gameId, players, deck, request.InitialCardCount);
-
-            game.ShuffleDeck();
-            game.DistributeCards();
-
-            await _redisService.SetAsync($"game:{game.GameId}", game, TimeSpan.FromHours(2));
-
-            var gameState = BuildGameState(game);
-
-            return new StartGameResponseDto
+            try
             {
-                GameId = game.GameId,
-                GameState = gameState
-            };
+                var gameId = Guid.NewGuid().ToString();
+
+                var deck = CreateStandardDeck();
+
+                var players = CreatePlayers(request.PlayerName, request.PlayerCount);
+
+                var game = new Game(gameId, players, deck, request.InitialCardCount);
+
+                game.ShuffleDeck();
+                game.DistributeCards();
+
+                await _redisService.SetAsync($"game:{game.GameId}", game, TimeSpan.FromHours(2));
+
+                var gameState = BuildGameState(game);
+
+                var response = new StartGameResponseDto
+                {
+                    GameId = game.GameId,
+                    GameState = gameState
+                };
+
+                return ServiceResult<StartGameResponseDto>.SuccessResult(response, "Game started successfully");
+            }
+            catch (Exception ex)
+            {
+                return ServiceResult<StartGameResponseDto>.FailureResult($"Failed to start game: {ex.Message}");
+            }
         }
 
-        public async Task<PlayCardResponseDto> PlayCardAsync(string gameId, PlayCardRequestDto request)
+        public async Task<ServiceResult<PlayCardResponseDto>> PlayCardAsync(string gameId, PlayCardRequestDto request)
         {
-            var game = await _redisService.GetAsync<Game>($"game:{gameId}");
-
-            if (game == null)
+            try
             {
-                return new PlayCardResponseDto
+                var game = await _redisService.GetAsync<Game>($"game:{gameId}");
+
+                if (game == null)
                 {
-                    Success = false,
-                    Message = "Game not found"
-                };
-            }
+                    return ServiceResult<PlayCardResponseDto>.FailureResult("Game not found");
+                }
 
-            // Validate player exists
-            var player = game.GetPlayerById(request.PlayerId);
-            if (player == null)
-            {
-                return new PlayCardResponseDto
+                // Validate player exists
+                var player = game.GetPlayerById(request.PlayerId);
+                if (player == null)
                 {
-                    Success = false,
-                    Message = "Player not found"
-                };
-            }
+                    return ServiceResult<PlayCardResponseDto>.FailureResult("Player not found");
+                }
 
-            // Validate it's player's turn
-            if (game.GetCurrentPlayer().Id != request.PlayerId)
-            {
-                return new PlayCardResponseDto
+                // Validate it's player's turn
+                if (game.GetCurrentPlayer().Id != request.PlayerId)
                 {
-                    Success = false,
-                    Message = "Not your turn"
-                };
-            }
+                    return ServiceResult<PlayCardResponseDto>.FailureResult("Not your turn");
+                }
 
-            // Validate card exists in player's hand
-            var playerHand = game.GetPlayerHand(player);
-            var cardToPlay = playerHand.FirstOrDefault(c => c.Id == request.CardId);
-            if (cardToPlay == null)
-            {
-                return new PlayCardResponseDto
+                // Validate card exists in player's hand
+                var playerHand = game.GetPlayerHand(player);
+                var cardToPlay = playerHand.FirstOrDefault(c => c.Id == request.CardId);
+                if (cardToPlay == null)
                 {
-                    Success = false,
-                    Message = "Card not found in your hand"
-                };
-            }
+                    return ServiceResult<PlayCardResponseDto>.FailureResult("Card not found in your hand");
+                }
 
-            // Validate card can be played
-            if (!game.IsCardMatch(cardToPlay))
-            {
-                return new PlayCardResponseDto
+                // Validate card can be played
+                if (!game.IsCardMatch(cardToPlay))
                 {
-                    Success = false,
-                    Message = "Card cannot be played"
+                    return ServiceResult<PlayCardResponseDto>.FailureResult("Card cannot be played");
+                }
+
+
+                // Event list
+                var events = new List<GameEventDto>();
+                game.OnGameEvent = events.Add;
+
+                game.PlayTurn(request.PlayerId, request.CardId, request.ChosenColor, request.CalledUno);
+
+                await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
+
+                var response = new PlayCardResponseDto
+                {
+                    Success = true,
+                    Message = "Card played successfully",
+                    GameState = BuildGameState(game),
+                    Events = events
                 };
+
+                return ServiceResult<PlayCardResponseDto>.SuccessResult(response, "Card played successfully");
             }
-
-
-            // Event list
-            var events = new List<GameEventDto>();
-            game.OnGameEvent = events.Add;
-
-            game.PlayTurn(request.PlayerId, request.CardId, request.ChosenColor, request.CalledUno);
-
-            await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
-
-            return new PlayCardResponseDto
+            catch (Exception ex)
             {
-                Success = true,
-                Message = "Card player successfully",
-                GameState = BuildGameState(game),
-                Events = events
-            };
+                return ServiceResult<PlayCardResponseDto>.FailureResult($"Failed to play card: {ex.Message}");
+            }
         }
 
-        public async Task<DrawCardResponseDto> DrawCardAsync(string gameId, DrawCardRequestDto request)
+        public async Task<ServiceResult<DrawCardResponseDto>> DrawCardAsync(string gameId, DrawCardRequestDto request)
         {
-            var game = await _redisService.GetAsync<Game>($"game:{gameId}");
-
-            if (game == null)
+            try
             {
-                return new DrawCardResponseDto
+                var game = await _redisService.GetAsync<Game>($"game:{gameId}");
+
+                if (game == null)
                 {
-                    Success = false,
-                    Message = "Game not found"
-                };
-            }
+                    return ServiceResult<DrawCardResponseDto>.FailureResult("Game not found");
+                }
 
-            // Validate player exists
-            var player = game.GetPlayerById(request.PlayerId);
-            if (player == null)
-            {
-                return new DrawCardResponseDto
+                // Validate player exists
+                var player = game.GetPlayerById(request.PlayerId);
+                if (player == null)
                 {
-                    Success = false,
-                    Message = "Player not found"
-                };
-            }
+                    return ServiceResult<DrawCardResponseDto>.FailureResult("Player not found");
+                }
 
-            // Validate it's player's turn
-            if (game.GetCurrentPlayer().Id != request.PlayerId)
-            {
-                return new DrawCardResponseDto
+                // Validate it's player's turn
+                if (game.GetCurrentPlayer().Id != request.PlayerId)
                 {
-                    Success = false,
-                    Message = "Not your turn"
-                };
-            }
+                    return ServiceResult<DrawCardResponseDto>.FailureResult("Not your turn");
+                }
 
-            // Check if player has playable cards
-            var playableCards = game.GetPlayableCardsForPlayer(player);
-            if (playableCards.Count > 0)
-            {
-                return new DrawCardResponseDto
+                // Check if player has playable cards
+                var playableCards = game.GetPlayableCardsForPlayer(player);
+                if (playableCards.Count > 0)
                 {
-                    Success = false,
-                    Message = "You have playable cards, you must play one"
+                    return ServiceResult<DrawCardResponseDto>.FailureResult("You have playable cards, you must play one");
+                }
+
+                // Event list
+                var events = new List<GameEventDto>();
+                game.OnGameEvent = events.Add;
+
+                game.DrawTurn(request.PlayerId);
+
+                await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
+
+                var response = new DrawCardResponseDto
+                {
+                    Success = true,
+                    Message = "Card drawn",
+                    GameState = BuildGameState(game),
+                    Events = events
                 };
+
+                return ServiceResult<DrawCardResponseDto>.SuccessResult(response, "Card drawn successfully");
             }
-
-            // Event list
-            var events = new List<GameEventDto>();
-            game.OnGameEvent = events.Add;
-
-            game.DrawTurn(request.PlayerId);
-
-            await _redisService.SetAsync($"game:{gameId}", game, TimeSpan.FromHours(2));
-
-            return new DrawCardResponseDto
+            catch (Exception ex)
             {
-                Success = true,
-                Message = "Card drawn",
-                GameState = BuildGameState(game),
-                Events = events
-            };
+                return ServiceResult<DrawCardResponseDto>.FailureResult($"Failed to draw card: {ex.Message}");
+            }
         }
 
         private ICollectionCard CreateStandardDeck()
