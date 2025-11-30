@@ -56,7 +56,7 @@ namespace Uno.API.Services.Implementations
 
             var deck = CreateStandardDeck();
 
-            var players = CreatePlayers(request.PlayerName);
+            var players = CreatePlayers(request.PlayerName, request.PlayerCount);
 
             var game = new Game(gameId, players, deck);
 
@@ -219,15 +219,17 @@ namespace Uno.API.Services.Implementations
             return new Deck(cards);
         }
 
-        private List<IPlayer> CreatePlayers(string humanPlayerName)
+        private List<IPlayer> CreatePlayers(string humanPlayerName, int playerCount)
         {
             var players = new List<IPlayer>
             {
                 new Player(Guid.NewGuid().ToString(), humanPlayerName, true),
                 new Player(Guid.NewGuid().ToString(), "Bot 1", false),
-                new Player(Guid.NewGuid().ToString(), "Bot 2", false),
-                new Player(Guid.NewGuid().ToString(), "Bot 3", false)
             };
+            for(int i=2; i<playerCount; i++)
+            {
+                players.Add(new Player(Guid.NewGuid().ToString(), $"Bot {i}", false));
+            }
 
             return players;
         }
