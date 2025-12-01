@@ -2,6 +2,7 @@ using Uno.API.Models.Common;
 using Uno.API.Models.Domain;
 using Uno.API.Models.DTOs.Requests;
 using Uno.API.Models.DTOs.Responses;
+using Uno.API.Models.Enums;
 using Uno.API.Services.Interfaces;
 
 namespace Uno.API.Services.Implementations
@@ -61,7 +62,15 @@ namespace Uno.API.Services.Implementations
 
                 var players = CreatePlayers(request.PlayerName, request.PlayerCount);
 
-                var game = new Game(gameId, players, deck, request.InitialCardCount);
+                var discardPile = new DiscardPile();
+                var hands = new Dictionary<string, ICollectionCard>();
+
+                foreach (var player in players)
+                {
+                    hands[player.Id] = new Hand();
+                }
+
+                var game = new Game(gameId, players, deck, discardPile, hands, request.InitialCardCount);
 
                 game.ShuffleDeck();
                 game.DistributeCards();

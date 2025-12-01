@@ -1,4 +1,5 @@
 using Uno.API.Models.DTOs.Responses;
+using Uno.API.Models.Enums;
 
 namespace Uno.API.Models.Domain;
 
@@ -30,22 +31,23 @@ public class Game
         CreatedAt = DateTime.UtcNow;
     }
 
-    public Game(string gameId, List<IPlayer> players, ICollectionCard deck, int initialCardCount)
+    public Game(
+        string gameId,
+        List<IPlayer> players,
+        ICollectionCard deck,
+        ICollectionCard discardPile,
+        Dictionary<string, ICollectionCard> hands,
+        int initialCardCount)
     {
         GameId = gameId;
         Players = players;
         Deck = deck;
-        DiscardPile = new DiscardPile();
-        Hands = new Dictionary<string, ICollectionCard>();
+        DiscardPile = discardPile;
+        Hands = hands;
         CurrentPlayerIdx = 0;
         Direction = GameDirection.Clockwise;
         CreatedAt = DateTime.UtcNow;
         InitialCardCount = initialCardCount;
-
-        foreach (var player in Players)
-        {
-            Hands[player.Id] = new Hand();
-        }
     }
 
     //Getter

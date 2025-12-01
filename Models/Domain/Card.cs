@@ -1,3 +1,5 @@
+using Uno.API.Models.Enums;
+
 namespace Uno.API.Models.Domain;
 
 public class Card : ICard

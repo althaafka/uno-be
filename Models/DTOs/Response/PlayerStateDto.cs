@@ -1,4 +1,6 @@
 using Uno.API.Models.Domain;
+using Uno.API.Models.Enums;
+
 namespace Uno.API.Models.DTOs.Responses;
 
 public class PlayerStateDto

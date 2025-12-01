@@ -1,4 +1,5 @@
 using System.Text.Json.Serialization;
+using Uno.API.Models.Enums;
 
 namespace Uno.API.Models.Domain;
 

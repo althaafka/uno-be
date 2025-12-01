@@ -1,20 +1,7 @@
 using Uno.API.Models.Domain;
+using Uno.API.Models.Enums;
 
 namespace Uno.API.Models.DTOs.Responses;
-
-public enum GameEventType
-{
-    PlayCard,
-    DrawCard,
-    GameOver,
-    Skip,
-    Reverse,
-    DrawTwo,
-    ChooseColor,
-    WildDrawFour,
-    PlayerCalledUno,
-    PlayerFailedToCallUno
-}
 
 public class GameEventDto
 {

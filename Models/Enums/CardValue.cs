@@ -1,4 +1,4 @@
-namespace Uno.API.Models.Domain;
+namespace Uno.API.Models.Enums;
 
 public enum CardValue
 {
