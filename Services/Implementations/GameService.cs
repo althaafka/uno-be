@@ -126,7 +126,7 @@ namespace Uno.API.Services.Implementations
                 }
 
                 // Validate card can be played
-                if (!game.IsCardMatch(cardToPlay))
+                if (!game.IsCardPlayable(cardToPlay))
                 {
                     return ServiceResult<PlayCardResponseDto>.FailureResult("Card cannot be played");
                 }
@@ -270,7 +270,7 @@ namespace Uno.API.Services.Implementations
                 TopCard = topCard != null ? new CardDto { Color = topCard.Color, Value = topCard.Value } : null!,
                 CurrentColor = game.GetCurrentColor(),
                 CurrentPlayerId = game.GetCurrentPlayer().Id,
-                Direction = game.GetDirection(),
+                Direction = game.GetGameDirection(),
                 DeckCardCount = game.GetDeckCount()
             };
         }

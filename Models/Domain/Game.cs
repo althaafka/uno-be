@@ -84,7 +84,7 @@ public class Game
         return Deck.Cards.Count;
     }
 
-    public GameDirection GetDirection()
+    public GameDirection GetGameDirection()
     {
         return Direction;
     }
@@ -228,6 +228,11 @@ public class Game
                     player.Id,
                     null
                 ));
+
+                if (Players.Count == 2)
+                {
+                    NextTurn();
+                }
                 break;
 
             case CardValue.DrawTwo:
@@ -294,7 +299,7 @@ public class Game
     }
 
 
-    public bool IsCardMatch(ICard card)
+    public bool IsCardPlayable(ICard card)
     {
         ICard? topCard = GetTopDiscardCard();
 
@@ -324,7 +329,7 @@ public class Game
             return [];
         }
 
-        return hand.Cards.Where(card => IsCardMatch(card)).ToList();
+        return hand.Cards.Where(card => IsCardPlayable(card)).ToList();
     }
 
     private ICard? SelectRandomPlayableCard(IPlayer player)
@@ -426,7 +431,7 @@ public class Game
         var drawnCard = DrawCard(player);
         bool cardWasPlayed = false;
 
-        if (IsCardMatch(drawnCard))
+        if (IsCardPlayable(drawnCard))
         {
             cardWasPlayed = true;
         } else
@@ -483,7 +488,7 @@ public class Game
         }
 
         var drawnCard = DrawCard(bot);
-        if (IsCardMatch(drawnCard))
+        if (IsCardPlayable(drawnCard))
         {
             CardColor? chosenColor = null;
 
